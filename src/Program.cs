@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using CallMonitor;
 using Microsoft.Extensions.Logging;
 using CallMonitor.Configuration;
 
@@ -14,21 +13,33 @@ namespace CallMonitor
             CreateHostBuilder(args).Build().Run();
         }
 
+        private static IConfiguration configuration;
+
         public static IHostBuilder CreateHostBuilder(string[] args)
         {
-            var config = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", false, true)
-            .Build();
-
             return Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((hostContext, config) =>
+                {
+                    config.Sources.Clear();
+
+                    var env = hostContext.HostingEnvironment;
+
+                    config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+                          .AddJsonFile($"appsettings.{env.EnvironmentName}.json",
+                                         optional: true, reloadOnChange: true);
+
+                    configuration = config.Build();
+                })
                 .ConfigureLogging(builder =>
                 {
-                    builder.AddConfiguration(config);
+                    builder.AddConfiguration(configuration);
+                    builder.AddSystemdConsole();
+                    
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.Configure<Application>(config.GetSection(typeof(Application).Name));
-                    services.Configure<Provider>(config.GetSection(typeof(Provider).Name));
+                    services.Configure<Application>(configuration.GetSection(typeof(Application).Name));
+                    services.Configure<Provider>(configuration.GetSection(typeof(Provider).Name));
                     services.AddSingleton<NetworkListener>();
                     services.AddSingleton<TrafficMonitor>();
 

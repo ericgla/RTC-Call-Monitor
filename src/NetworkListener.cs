@@ -38,7 +38,7 @@ namespace CallMonitor
                 throw new Exception($"unable to find a local ip address within network {_appConfig.Value.LocalNetwork}");
             }
 
-            _logger.LogDebug($"local ip: {_localIp}");
+            _logger.LogInformation($"monitoring traffic on {_localIp}");
 
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.IP);
             _socket.Bind(new IPEndPoint(_localIp, 0));

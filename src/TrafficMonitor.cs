@@ -18,6 +18,7 @@ namespace CallMonitor
         private Dictionary<string, int> _inboundStats = new();
         private Dictionary<string, int> _outboundStats = new();
         private ILogger<TrafficMonitor> _logger;
+        private NetworkListener _listener;
 
         public delegate void UnknownNetwork(string ip, int packetCount);
         public delegate void CallStart(string ip, string provider, int packetCount);
@@ -27,9 +28,10 @@ namespace CallMonitor
         public event CallStart OnCallStarted;
         public event CallEnd OnCallEnded;
 
-        public TrafficMonitor(ILogger<TrafficMonitor> logger, IOptions<Provider> config)
+        public TrafficMonitor(ILogger<TrafficMonitor> logger, IOptions<Provider> config, NetworkListener listener)
         {
             _logger = logger;
+            _listener = listener;
 
             // build known networks for each defined call provider
             foreach (var p in config.Value.KnownNetworks)
@@ -40,30 +42,37 @@ namespace CallMonitor
                     cidrList.Add(IPNetwork.Parse(a));
                 }
                 _knownNetworks.Add(p.Key, cidrList.ToArray());
+                _logger.LogInformation($"loaded provider {p.Key}, {p.Value.Count()} network prefixes");
             }
         }
 
-        public void Received(IPHeader ipHeader)
+        public void Start()
         {
-            if (ipHeader.Inbound)
+            _listener.OnUDPTafficeReceived += (IPHeader ipHeader) =>
             {
-                var source = ipHeader.SourceAddress.ToString();
-                if (!_inboundStats.ContainsKey(source))
+                if (ipHeader.Inbound)
                 {
-                    _inboundStats.Add(source, 0);
+                    var source = ipHeader.SourceAddress.ToString();
+                    if (!_inboundStats.ContainsKey(source))
+                    {
+                        _inboundStats.Add(source, 0);
+                    }
+                    _inboundStats[source]++;
                 }
-                _inboundStats[source]++;
-            }
-            else
-            {
-                var dest = ipHeader.DestinationAddress.ToString();
-                if (!_outboundStats.ContainsKey(dest))
+                else
                 {
-                    _outboundStats.Add(dest, 0);
+                    var dest = ipHeader.DestinationAddress.ToString();
+                    if (!_outboundStats.ContainsKey(dest))
+                    {
+                        _outboundStats.Add(dest, 0);
+                    }
+                    _outboundStats[dest]++;
                 }
-                _outboundStats[dest]++;
-            }
+            };
+            
+            _listener.Start();
         }
+
 
         public void CheckStats()
         {
