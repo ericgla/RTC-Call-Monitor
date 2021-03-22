@@ -1,4 +1,4 @@
-﻿using CallMonitor.Configuration;
+﻿using RtcCallMonitor.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 
-namespace CallMonitor
+namespace RtcCallMonitor
 {
     public class NetworkListener
     {

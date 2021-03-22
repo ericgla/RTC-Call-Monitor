@@ -7,7 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace CallMonitor
+namespace RtcCallMonitor
 {
     public static class Webhook
     {

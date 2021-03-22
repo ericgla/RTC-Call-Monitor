@@ -3,10 +3,10 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using CallMonitor.Configuration;
+using RtcCallMonitor.Configuration;
 using Microsoft.Extensions.Options;
 
-namespace CallMonitor
+namespace RtcCallMonitor
 {
     public class Worker : BackgroundService
     {
