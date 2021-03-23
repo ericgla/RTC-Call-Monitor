@@ -3,8 +3,8 @@
 ## About
 RTC-Call-Monitor is a tool to detect an active UDP based voice/video call by:
 
-* monitoring the rate of incoming/outgoing UDP packets from your machine's IP address.
-* checking the source/destination address against known network blocks for the major voice/video conference providers.
+* Monitoring the rate of incoming/outgoing UDP packets from your machine's IP address.
+* Checking the source/destination address against known network blocks for the major voice/video conference providers.
 
 When an active call is detected, will invoke a webhook for the start and end of a call.
 
@@ -15,6 +15,8 @@ When an active call is detected, will invoke a webhook for the start and end of 
 - WebEx
 - Slack
 - Google Meet
+
+Additional providers can be added by modifying the configuration file.  See *Adding new providers* below.
   
 ## Getting Started
 
@@ -55,13 +57,13 @@ sudo dotnet run
 
 #### Webhooks
 
-All webhooks are HTTP POST requests and require a valid URI value.
+All webhooks are HTTP POST requests and require a valid URL.
 
 **Call Start**
 
 `CallStart` in *appsettings.config*
 
-Body
+POST body included when calling the webhook
 ```
 {
   'provider': 'slack'
@@ -72,15 +74,19 @@ Body
 
 `CallEnd` in *appsettings.config*
 
-Body
+POST body included when calling the webhook
 ```
 {
   'duration': 123
 }
 ```
-`'duration'` is the call length in seconds.
+`duration` is the call length in seconds.
 
-#### Adding new providers/network blocks
+#### Adding new providers
+
+The configuration key `KnownNetworks` is a JSON dictionary with the key being the provider name, and value is an array of CIDR network blocks.  To add a new provider, add a new key/value pair to `KnownNetworks`.
+
+#### Adding new network blocks
 
 If the application is not detecting the start of your call, the most likely reason is that the IP address is not in a known network block for your provider.  To see the destination address of your call provider, enable debug logging.
 
