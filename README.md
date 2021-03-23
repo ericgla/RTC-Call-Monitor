@@ -1,5 +1,5 @@
 # RTC-Call-Monitor
----
+
 ## About
 RTC-Call-Monitor is a tool to detect an active UDP based voice/video call by:
 
