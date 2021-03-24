@@ -34,7 +34,7 @@ namespace RtcCallMonitor
                 {
                     builder.AddConfiguration(configuration);
                     builder.AddSystemdConsole();
-                    
+
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
@@ -44,7 +44,8 @@ namespace RtcCallMonitor
                     services.AddSingleton<TrafficMonitor>();
 
                     services.AddHostedService<Worker>();
-                });
+                })
+                .UseWindowsService();
         }
     }
 }
