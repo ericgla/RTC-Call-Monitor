@@ -15,6 +15,7 @@ When an active call is detected, will invoke a webhook for the start and end of 
 - WebEx
 - Slack
 - Google Meet
+- GoTo Meeting
 
 Additional providers can be added by modifying the configuration file.  See *Adding new providers* below.
   
