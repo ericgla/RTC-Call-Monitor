@@ -40,7 +40,7 @@ namespace RtcCallMonitor
 
             _logger.LogInformation($"monitoring traffic on {_localIp}");
 
-            _socket = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.IP);
+            _socket = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.Udp);
             _socket.Bind(new IPEndPoint(_localIp, 0));
             _socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.HeaderIncluded, true);
 
