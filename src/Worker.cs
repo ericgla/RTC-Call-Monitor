@@ -30,7 +30,7 @@ namespace RtcCallMonitor
             }
             catch (Exception e)
             {
-                _logger.LogError(e.Message);
+                _logger.LogError(e.ToString());
                 _host.StopApplication();
             }
 

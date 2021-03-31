@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 
 namespace RtcCallMonitor
 {
@@ -22,6 +23,25 @@ namespace RtcCallMonitor
 
         public event Notify OnUDPTafficeReceived;
 
+        private Socket CreateAndBindSocket()
+        {
+            const int SIO_RCVALL = unchecked((int)0x98000001);
+
+            var s = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.Udp);
+
+            s.Bind(new IPEndPoint(_localIp, 0));
+            s.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.HeaderIncluded, true);
+
+            byte[] IN = new byte[4] { 1, 0, 0, 0 };
+            byte[] OUT = new byte[4];
+
+            s.IOControl(SIO_RCVALL, IN, OUT);
+
+            if (BitConverter.ToInt32(OUT) != 0) throw new Exception("Got non-zero result from IOControl");
+
+            return s;
+        }
+
         public NetworkListener(ILogger<NetworkListener> logger, IOptions<Application> appConfig) => 
             (_logger, _appConfig) = (logger, appConfig);
 
@@ -38,15 +58,9 @@ namespace RtcCallMonitor
                 throw new Exception($"unable to find a local ip address within network {_appConfig.Value.LocalNetwork}");
             }
 
+            _socket = CreateAndBindSocket();
+
             _logger.LogInformation($"monitoring traffic on {_localIp}");
-
-            _socket = new Socket(AddressFamily.InterNetwork, SocketType.Raw, ProtocolType.Udp);
-            _socket.Bind(new IPEndPoint(_localIp, 0));
-            _socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.HeaderIncluded, true);
-
-            // Socket.IOControl is analogous to the WSAIoctl method of Winsock 2
-            // The current user must belong to the Administrators group on the local computer
-            _socket.IOControl(IOControlCode.ReceiveAll, new byte[4] { 1, 0, 0, 0 }, new byte[4] { 1, 0, 0, 0 });
 
             _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, new AsyncCallback(OnReceive), null);
         }
