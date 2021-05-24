@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
 
 namespace RtcCallMonitor
 {
@@ -13,8 +14,8 @@ namespace RtcCallMonitor
     {
         private Socket _socket;
         private IPAddress _localIp;
-        private IPNetwork _localCIDR;
-        private readonly byte[] _buffer = new byte[65507];  // max UDP packet size
+        private List<IPNetwork> _localCIDR = new List<IPNetwork>();
+        private byte[] _buffer = new byte[65507];  // max UDP packet size
 
         private readonly ILogger<NetworkListener> _logger;
         private readonly IOptions<Application> _appConfig;
@@ -42,22 +43,19 @@ namespace RtcCallMonitor
             return s;
         }
 
-        public NetworkListener(ILogger<NetworkListener> logger, IOptions<Application> appConfig) => 
-            (_logger, _appConfig) = (logger, appConfig);
+        public NetworkListener(ILogger<NetworkListener> logger, IOptions<Application> appConfig) {
+            _logger = logger;
+            _appConfig = appConfig;
+
+            foreach (var network in _appConfig.Value.LocalNetwork)
+            {
+                _localCIDR.Add(IPNetwork.Parse(network));
+            }
+        }
+            
 
         public void Start()
         {
-            _localCIDR = IPNetwork.Parse(_appConfig.Value.LocalNetwork);
-
-            _localIp = Dns.GetHostEntry(Dns.GetHostName()).AddressList?
-                .Where(ip => ip.AddressFamily == AddressFamily.InterNetwork && _localCIDR.Contains(ip))
-                .FirstOrDefault();
-
-            if (_localIp == null)
-            {
-                throw new Exception($"unable to find a local ip address within network {_appConfig.Value.LocalNetwork}");
-            }
-
             _socket = CreateAndBindSocket();
 
             _logger.LogInformation($"monitoring traffic on {_localIp}");
@@ -65,13 +63,34 @@ namespace RtcCallMonitor
             _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, new AsyncCallback(OnReceive), null);
         }
 
-        public void Stop() => _socket.Close();
+        public void UpdateIpAddress(IPAddress newAddress)
+        {
+            Stop();
+            _localIp = newAddress;
+            _logger.LogInformation($"Updating monitor to watch traffic on {_localIp}");
+            Start();
+        }
+
+        public void Stop()
+        {
+            if (_socket != null)
+            {
+                _socket.Close();
+            }
+        }
          
         private void OnReceive(IAsyncResult result)
         {
             try
             {
-                IPHeader ipHeader = new(_buffer, _socket.EndReceive(result), _localIp);
+                int defaultLength = _buffer.Length;
+
+                if (_socket.Connected)
+                {
+                    defaultLength = _socket.EndReceive(result);
+                }
+
+                IPHeader ipHeader = new(_buffer, defaultLength, _localIp);
                 if (IsOutsideUDPTaffice(ipHeader))
                 {
                     OnUDPTafficeReceived?.Invoke(ipHeader);
@@ -95,7 +114,13 @@ namespace RtcCallMonitor
             {
                 if (header.SourceAddress.Equals(_localIp) || header.DestinationAddress.Equals(_localIp))
                 {
-                    return !(_localCIDR.Contains(header.SourceAddress) && _localCIDR.Contains(header.DestinationAddress));
+                    bool result = true;
+                    foreach (var network in _localCIDR)
+                    {
+                        result &= !(network.Contains(header.SourceAddress) && network.Contains(header.DestinationAddress));
+                    }
+
+                    return result;
                 }
             }
             return false;
