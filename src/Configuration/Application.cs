@@ -8,7 +8,8 @@ namespace RtcCallMonitor.Configuration
 {
     public class Application
     {
-        public string LocalNetwork { get; set; }
+        public string[] LocalNetwork { get; set; }
+        public int DelayMs { get; set; }
         public string CallStartWebhook { get; set; }
         public string CallEndWebhook { get; set; }
     }

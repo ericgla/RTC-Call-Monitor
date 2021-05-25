@@ -19,9 +19,9 @@ namespace RtcCallMonitor
             try
             {
                 //Create MemoryStream out of the received bytes
-                MemoryStream memoryStream = new MemoryStream(buffer, 0, length);
+                using MemoryStream memoryStream = new MemoryStream(buffer, 0, length);
                 //Next we create a BinaryReader out of the MemoryStream
-                BinaryReader binaryReader = new BinaryReader(memoryStream);
+                using BinaryReader binaryReader = new BinaryReader(memoryStream);
 
                 //The first eight bits of the IP header contain the version and
                 //header length so we read them
