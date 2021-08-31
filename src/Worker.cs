@@ -34,6 +34,7 @@ namespace RtcCallMonitor
                 _host.StopApplication();
             }
 
+            _logger.LogInformation($"Using check interval of {_appConfig.Value.CheckInterval ?? 1000}ms, min packet rate {_appConfig.Value.MinPacketRate ?? 1}");
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
