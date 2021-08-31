@@ -38,7 +38,7 @@ namespace RtcCallMonitor
             {
                 try
                 {
-                    await Task.Delay(_appConfig.Value.DelayMs, stoppingToken);
+                    await Task.Delay(_appConfig.Value.CheckInterval ?? 1000, stoppingToken);
                     _monitor.CheckStats();
                 }
                 catch (Exception e)

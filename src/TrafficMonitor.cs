@@ -14,16 +14,15 @@ namespace RtcCallMonitor
     public class TrafficMonitor
     {
         private readonly Dictionary<string, IPNetwork[]> _knownNetworks = new();
-        private readonly int _minPacketRate = 1;
         private bool _callActive;
         private string _callIP;
         private DateTimeOffset _callStart;
-        private Dictionary<string, int> _inboundStats = new();
-        private Dictionary<string, int> _outboundStats = new();
-        private ILogger<TrafficMonitor> _logger;
+        private readonly Dictionary<string, int> _inboundStats = new();
+        private readonly Dictionary<string, int> _outboundStats = new();
+        private readonly ILogger<TrafficMonitor> _logger;
+        private readonly IOptions<Application> _appConfig;
         private NetworkListener _listener;
         private IPAddress _ipAddress = IPAddress.Loopback;
-        private readonly IOptions<Application> _appConfig;
 
         public delegate void UnknownNetwork(string ip, int packetCount);
         public delegate void CallStart(string ip, string provider, int packetCount);
@@ -33,28 +32,28 @@ namespace RtcCallMonitor
         public event CallStart OnCallStarted;
         public event CallEnd OnCallEnded;
 
-        public TrafficMonitor(ILogger<TrafficMonitor> logger, IOptions<Provider> config, NetworkListener listener, IOptions<Application> appConfig)
+        public TrafficMonitor(ILogger<TrafficMonitor> logger, NetworkListener listener, IOptions<Provider> config, IOptions<Application> appConfig)
         {
             _logger = logger;
             _listener = listener;
             _appConfig = appConfig;
 
             // build known networks for each defined call provider
-            foreach (var p in config.Value.KnownNetworks)
+            foreach (var network in config.Value.KnownNetworks)
             {
                 var cidrList = new List<IPNetwork>();
-                foreach (var a in p.Value)
+                foreach (var cidr in network.Value)
                 {
-                    cidrList.Add(IPNetwork.Parse(a));
+                    cidrList.Add(IPNetwork.Parse(cidr));
                 }
-                _knownNetworks.Add(p.Key, cidrList.ToArray());
-                _logger.LogInformation($"loaded provider {p.Key}, {p.Value.Count()} network prefixes");
+                _knownNetworks.Add(network.Key, cidrList.ToArray());
+                _logger.LogInformation($"loaded provider {network.Key}, {network.Value.Length} network prefixes");
             }
         }
 
         public void Start()
         {
-            _listener.OnUDPTafficeReceived += (IPHeader ipHeader) =>
+            _listener.OnUDPTafficReceived += (IPHeader ipHeader) =>
             {
                 if (ipHeader.Inbound)
                 {
@@ -83,7 +82,7 @@ namespace RtcCallMonitor
         private void NetworkChange_NetworkAddressChanged(object sender, EventArgs e)
         {
             _logger.LogInformation($"network changed!");
-            Thread.Sleep(_appConfig.Value.DelayMs);
+            Thread.Sleep(_appConfig.Value.CheckInterval ?? 1000);
             IPAddress newIpAddress = IPAddress.Loopback;
             try
             {
@@ -134,7 +133,8 @@ namespace RtcCallMonitor
 
             var (ip, rate) = topInbound.Value > topInbound.Value ? topInbound : topOutbound;
 
-            if (rate >= _minPacketRate)
+            
+            if (rate >= (_appConfig.Value.MinPacketRate ?? 1))
             {
                 var provider = _knownNetworks
                 .SelectMany(p => p.Value, (kvp, ip) => (kvp.Key, ip))

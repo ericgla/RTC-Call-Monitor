@@ -22,7 +22,7 @@ namespace RtcCallMonitor
 
         public delegate void Notify(IPHeader ipHeader);
 
-        public event Notify OnUDPTafficeReceived;
+        public event Notify OnUDPTafficReceived;
 
         private Socket CreateAndBindSocket()
         {
@@ -93,7 +93,7 @@ namespace RtcCallMonitor
                 IPHeader ipHeader = new(_buffer, defaultLength, _localIp);
                 if (IsOutsideUDPTaffice(ipHeader))
                 {
-                    OnUDPTafficeReceived?.Invoke(ipHeader);
+                    OnUDPTafficReceived?.Invoke(ipHeader);
                 }
             }
             catch (Exception e)
