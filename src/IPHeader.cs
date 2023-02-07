@@ -42,7 +42,7 @@ namespace RtcCallMonitor
                 //Next eight bits have the TTL value
                 _ = binaryReader.ReadByte();
 
-                //Next eight represnts the protocol encapsulated in the datagram
+                //Next eight represents the protocol encapsulated in the datagram
                 _protocol = binaryReader.ReadByte();
 
                 //Next sixteen bits contain the checksum of the header
