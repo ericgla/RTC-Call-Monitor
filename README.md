@@ -12,7 +12,8 @@ When an active call is detected, will invoke a webhook for the start and end of 
 ### Supported Providers
 
 - [Zoom](https://assets.zoom.us/docs/ipranges/ZoomMeetings.txt)
-- Microsoft Teams
+- [Microsoft Teams](https://learn.microsoft.com/en-us/microsoft-365/enterprise/urls-and-ip-address-ranges?view=o365-worldwide#skype-for-business-online-and-microsoft-teams)
+  - ID: 11, Category: Optimize Required
 - WebEx
 - Slack
 - Google Meet
